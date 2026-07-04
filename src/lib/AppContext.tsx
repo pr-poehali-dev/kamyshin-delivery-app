@@ -3,9 +3,12 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 export type CartItem = { name: string; place: string; price: number; qty: number; section: 'food' | 'goods' };
 export type User = { id: number; phone: string; name: string | null };
 
+export const ADMIN_PHONES = ['89061678157', '79061678157'];
+
 type AppState = {
   user: User | null;
   setUser: (u: User | null) => void;
+  isAdmin: boolean;
   district: string;
   setDistrict: (d: string) => void;
   address: string;
@@ -66,11 +69,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const cartCount = cart.reduce((a, b) => a + b.qty, 0);
   const cartSum = cart.reduce((a, b) => a + b.qty * b.price, 0);
+  const isAdmin = !!user && ADMIN_PHONES.includes(user.phone);
 
   return (
     <AppContext.Provider
       value={{
-        user, setUser,
+        user, setUser, isAdmin,
         district, setDistrict,
         address, setAddress,
         cart, addToCart, removeFromCart, clearCart,

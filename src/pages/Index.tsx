@@ -1,7 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { useApp } from '@/lib/AppContext';
+import func2url from '../../backend/func2url.json';
+
+const CATALOG_API = func2url.catalog;
+
+type Product = { name: string; place: string; price: number; time: number; rating: number; emoji: string };
 
 const MASCOT = 'https://cdn.poehali.dev/projects/30aa368c-a3b3-47da-9960-40e0b3c66f78/files/e9d10a74-477e-462e-810d-8c36cf853870.jpg';
 
@@ -24,31 +29,38 @@ const categories: Record<Tab, { label: string; emoji: string }[]> = {
   ],
 };
 
-const products: Record<Tab, { name: string; place: string; price: number; time: number; rating: number; emoji: string }[]> = {
-  food: [
-    { name: 'Пепперони 30см', place: 'Пиццерия «Волга»', price: 549, time: 35, rating: 4.9, emoji: '🍕' },
-    { name: 'Шаурма XL с курицей', place: 'ShaurmaBro', price: 289, time: 25, rating: 4.8, emoji: '🌯' },
-    { name: 'Сет «Камышинский»', place: 'Суши Рай', price: 890, time: 45, rating: 4.7, emoji: '🍣' },
-    { name: 'Двойной чизбургер', place: 'Бургер Хаус', price: 399, time: 30, rating: 4.6, emoji: '🍔' },
-  ],
-  goods: [
-    { name: 'Арбуз камышинский, 5кг', place: 'Рынок у моста', price: 350, time: 40, rating: 5.0, emoji: '🍉' },
-    { name: 'Молоко 3.2%, 1л', place: 'Магнит', price: 89, time: 30, rating: 4.8, emoji: '🥛' },
-    { name: 'Чипсы Lays, 150г', place: 'Пятёрочка', price: 149, time: 35, rating: 4.7, emoji: '🥔' },
-    { name: 'Детское пюре, 6шт', place: 'Аптека+', price: 420, time: 30, rating: 4.9, emoji: '🍼' },
-  ],
-};
-
 const districts = ['Центр', '5-й микрорайон', 'Текстильщики', 'Бекетовка', 'Самовывоз'];
 
 export default function Index() {
   const navigate = useNavigate();
-  const { user, district, setDistrict, cart, addToCart, cartCount, cartSum } = useApp();
+  const { user, isAdmin, district, setDistrict, cart, addToCart, cartCount, cartSum } = useApp();
   const [tab, setTab] = useState<Tab>('food');
+  const [items, setItems] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadCatalog = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await fetch(`${CATALOG_API}?section=${tab}`);
+      const d = await r.json();
+      setItems(
+        (d.products || []).map((p: { name: string; place: string; price: number; delivery_minutes: number; rating: number; emoji: string }) => ({
+          name: p.name, place: p.place, price: p.price, time: p.delivery_minutes, rating: Number(p.rating), emoji: p.emoji,
+        })),
+      );
+    } catch {
+      setItems([]);
+    }
+    setLoading(false);
+  }, [tab]);
 
   useEffect(() => {
     if (!user) navigate('/auth');
   }, [user, navigate]);
+
+  useEffect(() => {
+    if (user) loadCatalog();
+  }, [user, loadCatalog]);
 
   if (!user) return null;
 
@@ -66,9 +78,16 @@ export default function Index() {
               <Icon name="ChevronDown" size={16} className="opacity-70" />
             </button>
           </div>
-          <div className="flex items-center gap-1 bg-white/15 rounded-full pl-1 pr-3 py-1">
-            <img src={MASCOT} alt="Арбузик" className="w-8 h-8 rounded-full object-cover wiggle" />
-            <span className="font-display text-base">Арбузик</span>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Link to="/admin" className="bg-white/15 rounded-full p-2" title="Админ-панель">
+                <Icon name="ShieldCheck" size={20} />
+              </Link>
+            )}
+            <div className="flex items-center gap-1 bg-white/15 rounded-full pl-1 pr-3 py-1">
+              <img src={MASCOT} alt="Арбузик" className="w-8 h-8 rounded-full object-cover wiggle" />
+              <span className="font-display text-base">Арбузик</span>
+            </div>
           </div>
         </div>
 
@@ -137,8 +156,18 @@ export default function Index() {
           ))}
         </div>
 
+        {loading && (
+          <div className="flex justify-center mt-8 text-muted-foreground">
+            <Icon name="LoaderCircle" size={28} className="animate-spin" />
+          </div>
+        )}
+
+        {!loading && items.length === 0 && (
+          <p className="text-center text-muted-foreground mt-8 text-sm">В этом разделе пока пусто</p>
+        )}
+
         <div className="grid grid-cols-2 gap-3 mt-4">
-          {products[tab].map((p, i) => (
+          {items.map((p, i) => (
             <div
               key={p.name}
               className="bg-card rounded-3xl border border-border overflow-hidden shadow-sm float-in"

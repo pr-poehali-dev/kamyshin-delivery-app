@@ -11,6 +11,7 @@ import Auth from "./pages/Auth";
 import Cart from "./pages/Cart";
 import Tracking from "./pages/Tracking";
 import History from "./pages/History";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/tracking/:id" element={<Tracking />} />
             <Route path="/history" element={<History />} />
             <Route path="/courier" element={<Courier />} />
+            <Route path="/admin" element={<Admin />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -1,0 +1,16 @@
+{
+  "tests": [
+    {
+      "name": "CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Каталог еды",
+      "method": "GET",
+      "path": "/?section=food",
+      "expectedStatus": 200
+    }
+  ]
+}

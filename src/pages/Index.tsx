@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
+import { useApp } from '@/lib/AppContext';
 
 const MASCOT = 'https://cdn.poehali.dev/projects/30aa368c-a3b3-47da-9960-40e0b3c66f78/files/e9d10a74-477e-462e-810d-8c36cf853870.jpg';
 
@@ -40,26 +41,18 @@ const products: Record<Tab, { name: string; place: string; price: number; time: 
 
 const districts = ['Центр', '5-й микрорайон', 'Текстильщики', 'Бекетовка', 'Самовывоз'];
 
-const statuses = [
-  { label: 'Готовится', icon: 'ChefHat', done: true },
-  { label: 'Передан', icon: 'PackageCheck', done: true },
-  { label: 'В пути', icon: 'Bike', active: true },
-  { label: 'Доставлен', icon: 'Home' },
-];
-
 export default function Index() {
+  const navigate = useNavigate();
+  const { user, district, setDistrict, cart, addToCart, cartCount, cartSum } = useApp();
   const [tab, setTab] = useState<Tab>('food');
-  const [district, setDistrict] = useState('Центр');
-  const [cart, setCart] = useState<Record<string, number>>({});
 
-  const addToCart = (name: string) =>
-    setCart((c) => ({ ...c, [name]: (c[name] || 0) + 1 }));
+  useEffect(() => {
+    if (!user) navigate('/auth');
+  }, [user, navigate]);
 
-  const cartCount = Object.values(cart).reduce((a, b) => a + b, 0);
-  const cartSum = Object.entries(cart).reduce((sum, [name, qty]) => {
-    const p = [...products.food, ...products.goods].find((x) => x.name === name);
-    return sum + (p ? p.price * qty : 0);
-  }, 0);
+  if (!user) return null;
+
+  const qtyOf = (name: string) => cart.find((c) => c.name === name)?.qty || 0;
 
   return (
     <div className="min-h-screen bg-background pb-28 max-w-md mx-auto">
@@ -168,49 +161,20 @@ export default function Index() {
                 <div className="flex items-center justify-between mt-2">
                   <span className="font-black text-base">{p.price} ₽</span>
                   <button
-                    onClick={() => addToCart(p.name)}
-                    className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:scale-110 transition shadow"
+                    onClick={() => addToCart({ name: p.name, place: p.place, price: p.price, section: tab })}
+                    className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:scale-110 transition shadow relative"
                   >
-                    <Icon name={cart[p.name] ? 'Check' : 'Plus'} size={18} />
+                    <Icon name="Plus" size={18} />
+                    {qtyOf(p.name) > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 bg-accent text-accent-foreground text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+                        {qtyOf(p.name)}
+                      </span>
+                    )}
                   </button>
                 </div>
               </div>
             </div>
           ))}
-        </div>
-
-        <div className="mt-7 bg-card rounded-3xl border border-border p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="font-bold text-base flex items-center gap-2">
-              <Icon name="Bike" size={18} className="text-primary" /> Заказ #248 в пути
-            </p>
-            <span className="text-xs font-bold text-secondary">~12 мин</span>
-          </div>
-          <div className="relative mt-4 h-28 rounded-2xl bg-secondary/10 overflow-hidden">
-            <div className="absolute inset-0 watermelon-dots opacity-20" />
-            <div className="absolute top-4 left-5 text-2xl">🏪</div>
-            <div className="absolute bottom-4 right-5 text-2xl">🏠</div>
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl wiggle">🛵</div>
-            <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-              <path d="M 35 30 Q 150 20 200 100" stroke="hsl(168 60% 40%)" strokeWidth="3" strokeDasharray="6 6" fill="none" />
-            </svg>
-          </div>
-          <div className="flex justify-between mt-4">
-            {statuses.map((s) => (
-              <div key={s.label} className="flex flex-col items-center gap-1 flex-1">
-                <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center ${
-                    s.active ? 'bg-primary text-primary-foreground wiggle' : s.done ? 'bg-secondary text-white' : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  <Icon name={s.icon} size={16} />
-                </div>
-                <span className={`text-[10px] text-center font-semibold ${s.active ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {s.label}
-                </span>
-              </div>
-            ))}
-          </div>
         </div>
 
         <div className="mt-5 bg-accent text-accent-foreground rounded-3xl p-5 flex items-center justify-between">
@@ -225,21 +189,25 @@ export default function Index() {
       </main>
 
       <nav className="fixed bottom-0 inset-x-0 z-30 bg-card border-t border-border px-6 py-2 flex justify-around max-w-md mx-auto">
-        {[
-          { icon: 'House', label: 'Главная', active: true },
-          { icon: 'Search', label: 'Поиск' },
-          { icon: 'ClipboardList', label: 'Заказы' },
-          { icon: 'User', label: 'Профиль' },
-        ].map((n) => (
-          <button key={n.label} className={`flex flex-col items-center gap-0.5 ${n.active ? 'text-primary' : 'text-muted-foreground'}`}>
-            <Icon name={n.icon} size={22} />
-            <span className="text-[10px] font-semibold">{n.label}</span>
-          </button>
-        ))}
+        <Link to="/" className="flex flex-col items-center gap-0.5 text-primary">
+          <Icon name="House" size={22} />
+          <span className="text-[10px] font-semibold">Главная</span>
+        </Link>
+        <Link to="/history" className="flex flex-col items-center gap-0.5 text-muted-foreground">
+          <Icon name="ClipboardList" size={22} />
+          <span className="text-[10px] font-semibold">Заказы</span>
+        </Link>
+        <button className="flex flex-col items-center gap-0.5 text-muted-foreground">
+          <Icon name="User" size={22} />
+          <span className="text-[10px] font-semibold">Профиль</span>
+        </button>
       </nav>
 
       {cartCount > 0 && (
-        <button className="fixed bottom-20 right-5 z-40 bg-primary text-primary-foreground rounded-full pl-4 pr-5 py-3 shadow-2xl flex items-center gap-2 float-in">
+        <Link
+          to="/cart"
+          className="fixed bottom-20 right-5 z-40 bg-primary text-primary-foreground rounded-full pl-4 pr-5 py-3 shadow-2xl flex items-center gap-2 float-in"
+        >
           <div className="relative">
             <Icon name="ShoppingCart" size={22} />
             <span className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
@@ -247,7 +215,7 @@ export default function Index() {
             </span>
           </div>
           <span className="font-black">{cartSum} ₽</span>
-        </button>
+        </Link>
       )}
     </div>
   );

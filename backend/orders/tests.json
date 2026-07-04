@@ -1,0 +1,16 @@
+{
+  "tests": [
+    {
+      "name": "CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Заказ по несуществующему user_id",
+      "method": "GET",
+      "path": "/?resource=orders&user_id=999999",
+      "expectedStatus": 200
+    }
+  ]
+}

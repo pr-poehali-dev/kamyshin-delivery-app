@@ -1,0 +1,17 @@
+{
+  "tests": [
+    {
+      "name": "CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Некорректный номер",
+      "method": "POST",
+      "path": "/",
+      "body": {"action": "send_code", "phone": "123"},
+      "expectedStatus": 400
+    }
+  ]
+}

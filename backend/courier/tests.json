@@ -1,0 +1,16 @@
+{
+  "tests": [
+    {
+      "name": "Список доступных заказов",
+      "method": "GET",
+      "path": "/?scope=available",
+      "expectedStatus": 200
+    },
+    {
+      "name": "CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 
 const MASCOT = 'https://cdn.poehali.dev/projects/30aa368c-a3b3-47da-9960-40e0b3c66f78/files/e9d10a74-477e-462e-810d-8c36cf853870.jpg';
@@ -217,9 +218,9 @@ export default function Index() {
             <p className="font-black text-base">Стать курьером 🛵</p>
             <p className="text-xs mt-0.5 opacity-80">Свободный график по Камышину</p>
           </div>
-          <button className="bg-accent-foreground text-accent font-bold text-sm px-4 py-2 rounded-full">
+          <Link to="/courier" className="bg-accent-foreground text-accent font-bold text-sm px-4 py-2 rounded-full">
             Начать
-          </button>
+          </Link>
         </div>
       </main>
 

@@ -36,6 +36,9 @@ export default function Auth() {
       const d = await r.json();
       if (!r.ok) {
         setError(d.error || 'Не удалось отправить код');
+      } else if (d.test_mode) {
+        setCode('0000');
+        await verifyCode(digits, '0000');
       } else {
         setStep('code');
       }
@@ -45,16 +48,17 @@ export default function Auth() {
     setLoading(false);
   };
 
-  const verifyCode = async () => {
-    if (code.length < 4) return;
+  const verifyCode = async (phoneOverride?: string, codeOverride?: string) => {
+    const codeToSend = codeOverride ?? code;
+    if (codeToSend.length < 4) return;
     setLoading(true);
     setError('');
     try {
-      const digits = phone.replace(/\D/g, '');
+      const digits = phoneOverride ?? phone.replace(/\D/g, '');
       const r = await fetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'verify_code', phone: digits, code }),
+        body: JSON.stringify({ action: 'verify_code', phone: digits, code: codeToSend }),
       });
       const d = await r.json();
       if (!r.ok) {
@@ -124,7 +128,7 @@ export default function Auth() {
           />
           {error && <p className="text-destructive text-sm mt-2">{error}</p>}
           <button
-            onClick={verifyCode}
+            onClick={() => verifyCode()}
             disabled={loading}
             className="mt-4 w-full bg-primary text-primary-foreground font-bold py-3 rounded-2xl disabled:opacity-60"
           >

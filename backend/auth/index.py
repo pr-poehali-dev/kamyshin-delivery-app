@@ -15,6 +15,9 @@ CORS = {
     'Content-Type': 'application/json',
 }
 
+TEST_PHONES = {'89061678157', '79061678157'}
+TEST_CODE = '0000'
+
 
 def send_sms(phone: str, code: str):
     api_id = os.environ.get('SMSRU_API_ID')
@@ -49,6 +52,9 @@ def handler(event: dict, context) -> dict:
             if not phone or len(phone) < 10:
                 return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Некорректный номер телефона'})}
 
+            if phone in TEST_PHONES:
+                return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'sent': True, 'test_mode': True})}
+
             code = str(random.randint(1000, 9999))
             expires = datetime.utcnow() + timedelta(minutes=5)
             cur.execute(
@@ -60,6 +66,17 @@ def handler(event: dict, context) -> dict:
 
         if action == 'verify_code':
             code = (body.get('code') or '').strip()
+
+            if phone in TEST_PHONES:
+                if code != TEST_CODE:
+                    return {'statusCode': 400, 'headers': CORS, 'body': json.dumps({'error': 'Неверный код'})}
+                cur.execute("SELECT * FROM users WHERE phone = %s", (phone,))
+                user = cur.fetchone()
+                if not user:
+                    cur.execute("INSERT INTO users (phone) VALUES (%s) RETURNING *", (phone,))
+                    user = cur.fetchone()
+                return {'statusCode': 200, 'headers': CORS, 'body': json.dumps({'user': user}, default=str)}
+
             cur.execute(
                 "SELECT * FROM auth_codes WHERE phone = %s AND code = %s AND is_used = FALSE "
                 "AND expires_at > CURRENT_TIMESTAMP ORDER BY created_at DESC LIMIT 1",
